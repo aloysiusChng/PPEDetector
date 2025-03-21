@@ -2,3 +2,4 @@ ultralytics
 opencv-python
 gpiozero
 python-telegram-bot
+python-dotenv
