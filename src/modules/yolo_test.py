@@ -13,7 +13,7 @@ while cap.isOpened():
         break  # Exit if no frame is captured
 
     # Run inference
-    results = model(frame)
+    results = model(frame, stream=True)
 
     # Process each detection result
     for result in results:
