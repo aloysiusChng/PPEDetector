@@ -1,4 +1,5 @@
 import os
+import asyncio
 from dotenv import load_dotenv
 from telegram import Bot
 
@@ -16,4 +17,4 @@ def send_message():
     bot.send_message(chat_id=os.getenv("TELEGRAM_CHAT_ID"), text="Hello, World!")
 
 if __name__ == "__main__":
-    send_message()
+    asyncio.run(send_message())

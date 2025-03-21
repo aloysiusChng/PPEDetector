@@ -13,9 +13,9 @@ while cap.isOpened():
         break  # Exit if no frame is captured
     
     resized_frame = cv2.resize(frame, (320, 320))
-
+ 
     # Run inference
-    results = model(resized_frame, stream=True)
+    results = model(resized_frame)
 
     # Process each detection result
     for result in results:
