@@ -2,6 +2,16 @@ from ultralytics import YOLO
 import cv2
 import time
 
+import os
+import asyncio
+from dotenv import load_dotenv
+from telegram import Bot
+
+load_dotenv()
+# Creating a Bot object with the token from the .env file
+bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
+chat_id = os.getenv("TELEGRAM_CHAT_ID")
+
 # Load the YOLO model
 model = YOLO("checkpoints/yolo10s_trained1.pt")
 
@@ -14,6 +24,13 @@ cap = cv2.VideoCapture(0)
 start_time = time.time()
 inference_done = False
 annotated_frame = None
+
+def telegram_message(message):
+    """
+    Sends a message to a Telegram chat using the Telegram bot.
+    """
+    print("Sending Alert to Telegram: ", message)
+    bot.send_message(chat_id=chat_id, text=message)
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -75,6 +92,10 @@ while cap.isOpened():
             cv2.putText(annotated_crop, f"{status} {item}", (checklist_x, checklist_y),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
             checklist_y += 30
+        
+        # Send Telegram alert if helmet is missing
+        if "person" in detected_classes and "helmet" not in detected_classes:
+            telegram_message("No helmet detected!")
 
         annotated_frame = annotated_crop
         inference_done = True
