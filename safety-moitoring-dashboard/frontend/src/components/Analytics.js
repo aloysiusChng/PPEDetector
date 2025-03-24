@@ -5,7 +5,6 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 import { Calendar, Download, Clock } from 'lucide-react';
-import './Analytics.css';
 
 const Analytics = ({ incidents }) => {
   const [timeRange, setTimeRange] = useState('week');
