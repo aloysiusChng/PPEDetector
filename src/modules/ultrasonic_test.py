@@ -2,7 +2,7 @@ from gpiozero import DistanceSensor
 import time
   
 # US is short for Ultrasonic Sensor
-US = DistanceSensor(echo=17, trigger=4)
+US = DistanceSensor(echo=3, trigger=5)
 
 # Set the threshold distance to 1 meter
 US.threshold_distance = 1

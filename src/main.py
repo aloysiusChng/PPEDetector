@@ -15,7 +15,7 @@ model = YOLO("checkpoints/yolo10s_trained1.pt")
 cap = cv2.VideoCapture(0)  # Use 0 for the default webcam
 
 # US (Ultrasonic) Set up
-US = DistanceSensor(echo=17, trigger=4)
+US = DistanceSensor(echo=4, trigger=17)
 # Set the threshold distance to 0.5 meter
 US.threshold_distance = 0.5
 # Set the max distance to 1 meters

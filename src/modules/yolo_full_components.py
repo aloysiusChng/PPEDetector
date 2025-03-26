@@ -30,7 +30,7 @@ def telegram_message(message):
     Sends a message to a Telegram chat using the Telegram bot.
     """
     print("Sending Alert to Telegram: ", message)
-    bot.send_message(chat_id=chat_id, text=message)
+    asyncio.run(bot.send_message(chat_id=chat_id, text=message))
 
 while cap.isOpened():
     ret, frame = cap.read()
