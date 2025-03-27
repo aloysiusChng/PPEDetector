@@ -25,8 +25,11 @@ cap = cv2.VideoCapture(0)
 
 # --- Ultrasonic Sensor ---
 US = DistanceSensor(echo=4, trigger=17)
-US.threshold_distance = 1.5
+US.threshold_distance = 0.75
 US.max_distance = 2
+
+# --- Constants ---
+SHOW_BOUNDING_BOXES = False  # Toggle this to False to hide bounding boxes
 
 def telegram_message(message):
     print("Sending Alert to Telegram: ", message)
@@ -67,31 +70,29 @@ def run_inference(frame, top_left, bottom_right):
     annotated_crop = cropped_frame.copy()
     detected_classes = set()
 
-    # Optional: Draw boxes manually if you want to show detections
+    # Draw bounding boxes if enabled
     for box in results[0].boxes:
         cls_id = int(box.cls[0].item())
         class_name = model.names[cls_id]
         detected_classes.add(class_name)
 
-        # Draw bounding box (optional visual aid)
-        xyxy = box.xyxy[0].int().tolist()
-        x1, y1, x2, y2 = xyxy
-        cv2.rectangle(annotated_crop, (x1, y1), (x2, y2), (255, 255, 0), 2)
-        cv2.putText(annotated_crop, class_name, (x1, y1 - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+        if SHOW_BOUNDING_BOXES:
+            xyxy = box.xyxy[0].int().tolist()
+            x1, y1, x2, y2 = xyxy
+            cv2.rectangle(annotated_crop, (x1, y1), (x2, y2), (255, 255, 0), 2)
+            cv2.putText(annotated_crop, class_name, (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
 
-    # Checklist overlay (✓ or ✗ for each required item)
+    # Checklist overlay (color only)
     checklist_x, checklist_y = 10, 30
     for item in required_items:
-        status = "✓" if item in detected_classes else "✗"
         color = (0, 255, 0) if item in detected_classes else (0, 0, 255)
-        cv2.putText(annotated_crop, f"{status} {item}", (checklist_x, checklist_y),
+        cv2.putText(annotated_crop, item, (checklist_x, checklist_y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
         checklist_y += 30
 
     missing_items = [item for item in required_items if item not in detected_classes]
     return annotated_crop, missing_items
-
 
 # --- Display function (Fix #3) ---
 def show_result_window(img, timeout=5):
