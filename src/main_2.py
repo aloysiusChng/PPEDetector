@@ -60,16 +60,27 @@ def run_inference(frame, top_left, bottom_right):
 
     cropped_frame = frame[roi_y1:roi_y2, roi_x1:roi_x2]
     resized_frame = cv2.resize(cropped_frame, (320, 320))
-    results = model(resized_frame)
-    annotated_crop = results[0].plot()
 
+    results = model(resized_frame)
+
+    # Copy the original cropped frame for annotation
+    annotated_crop = cropped_frame.copy()
     detected_classes = set()
+
+    # Optional: Draw boxes manually if you want to show detections
     for box in results[0].boxes:
         cls_id = int(box.cls[0].item())
         class_name = model.names[cls_id]
         detected_classes.add(class_name)
 
-    # Checklist overlay
+        # Draw bounding box (optional visual aid)
+        xyxy = box.xyxy[0].int().tolist()
+        x1, y1, x2, y2 = xyxy
+        cv2.rectangle(annotated_crop, (x1, y1), (x2, y2), (255, 255, 0), 2)
+        cv2.putText(annotated_crop, class_name, (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+
+    # Checklist overlay (✓ or ✗ for each required item)
     checklist_x, checklist_y = 10, 30
     for item in required_items:
         status = "✓" if item in detected_classes else "✗"
@@ -80,6 +91,7 @@ def run_inference(frame, top_left, bottom_right):
 
     missing_items = [item for item in required_items if item not in detected_classes]
     return annotated_crop, missing_items
+
 
 # --- Display function (Fix #3) ---
 def show_result_window(img, timeout=5):
