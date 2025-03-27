@@ -7,26 +7,30 @@ import asyncio
 from telegram import Bot
 from dotenv import load_dotenv
 
-# Load environment variables
+# --- Load environment and Telegram Bot ---
 load_dotenv()
 bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
 chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
-# Load YOLO model
+# Set up asyncio event loop (Fix #4)
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+# --- YOLO model and constants ---
 model = YOLO("checkpoints/yolo10s_trained1.pt")
 required_items = ["person", "helmet", "gloves"]
 
-# Camera
+# --- Camera ---
 cap = cv2.VideoCapture(0)
 
-# Ultrasonic Sensor
+# --- Ultrasonic Sensor ---
 US = DistanceSensor(echo=4, trigger=17)
 US.threshold_distance = 1.5
 US.max_distance = 2
 
 def telegram_message(message):
     print("Sending Alert to Telegram: ", message)
-    asyncio.run(bot.send_message(chat_id=chat_id, text=message))
+    loop.run_until_complete(bot.send_message(chat_id=chat_id, text=message))
 
 def show_guide(frame, elapsed):
     h, w, _ = frame.shape
@@ -65,7 +69,7 @@ def run_inference(frame, top_left, bottom_right):
         class_name = model.names[cls_id]
         detected_classes.add(class_name)
 
-    # Checklist Overlay
+    # Checklist overlay
     checklist_x, checklist_y = 10, 30
     for item in required_items:
         status = "✓" if item in detected_classes else "✗"
@@ -75,44 +79,57 @@ def run_inference(frame, top_left, bottom_right):
         checklist_y += 30
 
     missing_items = [item for item in required_items if item not in detected_classes]
-
     return annotated_crop, missing_items
 
-# Main loop
-while True:
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-    print("Waiting for person...")
-    US.wait_for_in_range()
-    print("Person detected!")
-
-    # Countdown with guide
-    start_time = time.time()
-    while time.time() - start_time < 5:
-        ret, frame = cap.read()
-        if not ret:
-            continue
-        elapsed = time.time() - start_time
-        overlay, top_left, bottom_right = show_guide(frame, elapsed)
-        cv2.imshow("YOLO Detection", overlay)
+# --- Display function (Fix #3) ---
+def show_result_window(img, timeout=5):
+    start = time.time()
+    while time.time() - start < timeout:
+        cv2.imshow("YOLO Detection", img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    # Capture final frame after countdown
-    ret, final_frame = cap.read()
-    if not ret:
-        continue
+# --- Main loop ---
+try:
+    while True:
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-    annotated, missing = run_inference(final_frame, top_left, bottom_right)
-    cv2.imshow("YOLO Detection", annotated)
+        print("Waiting for person...")
+        US.wait_for_in_range()
+        print("Person detected!")
 
-    if "person" in missing:
-        print("No person detected. Skipping Telegram alert.")
-    elif missing:
-        telegram_message(f"PPE Missing: {', '.join(missing)}")
-    else:
-        print("All PPE present.")
+        # Countdown with guide
+        start_time = time.time()
+        while time.time() - start_time < 5:
+            ret, frame = cap.read()
+            if not ret:
+                continue
+            elapsed = time.time() - start_time
+            overlay, top_left, bottom_right = show_guide(frame, elapsed)
+            cv2.imshow("YOLO Detection", overlay)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
-    time.sleep(5)  # cooldown
+        # Capture final frame and run inference
+        ret, final_frame = cap.read()
+        if not ret:
+            continue
+
+        annotated, missing = run_inference(final_frame, top_left, bottom_right)
+        show_result_window(annotated, timeout=5)  # Show detection result (Fix #3)
+
+        if "person" in missing:
+            print("No person detected. Skipping Telegram alert.")
+        elif missing:
+            telegram_message(f"PPE Missing: {', '.join(missing)}")
+        else:
+            print("All PPE present.")
+
+        time.sleep(5)  # Cooldown (Final Suggestion #3)
+        cv2.destroyAllWindows()
+
+finally:
+    print("Cleaning up...")
+    cap.release()
     cv2.destroyAllWindows()
