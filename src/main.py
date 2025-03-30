@@ -36,6 +36,8 @@ US.max_distance = 2
 
 # --- Constants ---
 SHOW_BOUNDING_BOXES = True  # Toggle this to False to hide bounding boxes
+S3_REGION = os.getenv("S3_REGION")
+S3_BUCKET = os.getenv("S3_BUCKET")
 
 # Push notification to Telegram
 def telegram_message(message):
@@ -101,12 +103,12 @@ def run_inference(frame, top_left, bottom_right):
     annotated_crop = cropped_frame.copy()
     detected_classes = set()
 
-    # Draw bounding boxes if enabled
     for box in results[0].boxes:
         cls_id = int(box.cls[0].item())
         class_name = model.names[cls_id]
         detected_classes.add(class_name)
 
+        # Draw bounding boxes if enabled
         if SHOW_BOUNDING_BOXES:
             xyxy = box.xyxy[0].int().tolist()
             x1, y1, x2, y2 = xyxy
@@ -125,7 +127,7 @@ def run_inference(frame, top_left, bottom_right):
     missing_items = [item for item in required_items if item not in detected_classes]
     return annotated_crop, missing_items
 
-# --- Display function (Fix #3) ---
+# --- Display function ---
 def show_result_window(img, timeout=5):
     start = time.time()
     while time.time() - start < timeout:
@@ -161,7 +163,7 @@ try:
             continue
 
         annotated, missing = run_inference(final_frame, top_left, bottom_right)
-        show_result_window(annotated, timeout=5)  # Show detection result (Fix #3)
+        show_result_window(annotated, timeout=5)  # Show detection result
 
         _, buffer = cv2.imencode('.png', annotated)
         image_data = base64.b64encode(zstd.compress(buffer)).decode("utf-8")
@@ -169,7 +171,7 @@ try:
         if "person" in missing:
             print("No person detected. Skipping Telegram alert.")
         elif missing:
-            telegram_message(f"PPE Missing: {', '.join(missing)}")
+            telegram_message(f"PPE Missing at {device_name}: {', '.join(missing)}. Image Evidence: https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com/{image_data}")
             upload_event(image_data, True, device_name)
         else:
             print("All PPE present.")
