@@ -24,7 +24,7 @@ const Analytics = ({ incidents }) => {
       setDailyData(dailyStats);
       
       // Calculate compliance rate
-      const violations = incidents.filter(inc => inc.flag === 1).length;
+      const violations = incidents.filter(inc => inc.flag === true).length;
       const rate = Math.round(((incidents.length - violations) / incidents.length) * 100);
       setComplianceRate(rate);
     }
@@ -38,7 +38,7 @@ const Analytics = ({ incidents }) => {
     data.forEach(incident => {
       const hour = new Date(incident.timestamp).getHours();
       hourCounts[hour]++;
-      if (incident.flag === 1) {
+      if (incident.flag === true) {
         violationCounts[hour]++;
       }
     });
@@ -78,7 +78,7 @@ const Analytics = ({ incidents }) => {
       
       if (dayData) {
         dayData.detections++;
-        if (incident.flag === 1) {
+        if (incident.flag === true) {
           dayData.violations++;
         }
       }
@@ -101,7 +101,7 @@ const Analytics = ({ incidents }) => {
     data.forEach(incident => {
       const dayIndex = new Date(incident.timestamp).getDay();
       dayCounts[dayIndex]++;
-      if (incident.flag === 1) {
+      if (incident.flag === true) {
         violationCounts[dayIndex]++;
       }
     });
@@ -118,7 +118,7 @@ const Analytics = ({ incidents }) => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
   
   // Only show violations (flag=1)
-  const violations = incidents.filter(incident => incident.flag === 1);
+  const violations = incidents.filter(incident => incident.flag === true);
   
   return (
     <div className="analytics">

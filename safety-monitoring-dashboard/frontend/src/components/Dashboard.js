@@ -12,7 +12,7 @@ const Dashboard = ({ incidents, stats, loading }) => {
   }
   
   // Filter for violations (flag=1)
-  const violations = incidents.filter(incident => incident.flag === 1);
+  const violations = incidents.filter(incident => incident.flag === true);
   
   // Calculate violation rate
   const violationRate = incidents.length > 0 

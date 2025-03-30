@@ -1,0 +1,10 @@
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "80:3000"
+    environment:
+      - DB_CONNECTION_STRING=postgresql://postgres:edgeInf2009@ppedetector-rds-db.ci9owh7ddycl.us-east-1.rds.amazonaws.com/ppevision
+      - S3_BUCKET_URL=https://ppe-vision-image.s3.ap-southeast-1.amazonaws.com
+      # Remove AWS credentials that were previously needed for DynamoDB

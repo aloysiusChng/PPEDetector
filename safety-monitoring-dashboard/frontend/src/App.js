@@ -20,8 +20,35 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [newAlerts, setNewAlerts] = useState(0);
+  const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
   
-  // Function to fetch data from API
+  // Function to fetch data silently without loading indicator
+  const fetchDataSilently = async () => {
+    try {
+      setIsBackgroundRefreshing(true);
+      const incidentsData = await fetchIncidents();
+      const statsData = await fetchSummaryStats();
+      
+      setIncidents(incidentsData);
+      setStats(statsData);
+      
+      // Calculate new alerts (incidents from the last hour)
+      const oneHourAgo = new Date();
+      oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+      
+      const recentAlerts = incidentsData.filter(incident => 
+        new Date(incident.timestamp) > oneHourAgo
+      ).length;
+      
+      setNewAlerts(recentAlerts);
+      setIsBackgroundRefreshing(false);
+    } catch (err) {
+      console.error('Background refresh error:', err);
+      setIsBackgroundRefreshing(false);
+    }
+  };
+  
+  // Function to fetch data with loading indicator (for initial load)
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -56,11 +83,14 @@ function App() {
   // Set up polling for real-time updates
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchData();
-    }, 15000); // Poll every 15 seconds
+      // Only refresh if not already refreshing
+      if (!isBackgroundRefreshing) {
+        fetchDataSilently();
+      }
+    }, 2000); // Poll every 5 seconds
     
     return () => clearInterval(interval);
-  }, []);
+  }, [isBackgroundRefreshing]);
   
   // Handle error states
   if (error) {

@@ -59,8 +59,8 @@ const IncidentDetails = ({ incidents }) => {
           <ArrowLeft size={16} /> Back to Dashboard
         </button>
         <h2>Incident {incident.id}</h2>
-        <span className={`status ${incident.flag === 1 ? 'active' : 'resolved'}`}>
-          {incident.flag === 1 ? 'Violation' : 'No Violation'}
+        <span className={`status ${incident.flag === true ? 'active' : 'resolved'}`}>
+          {incident.flag === true ? 'Violation' : 'No Violation'}
         </span>
       </div>
       
@@ -91,8 +91,8 @@ const IncidentDetails = ({ incidents }) => {
                 <AlertTriangle size={20} />
                 <div>
                   <span className="label">Status</span>
-                  <span className={`value severity ${incident.flag === 1 ? 'high' : 'low'}`}>
-                    {incident.flag === 1 ? 'Safety Violation' : 'No Violation'}
+                  <span className={`value severity ${incident.flag === true ? 'high' : 'low'}`}>
+                    {incident.flag === true ? 'Safety Violation' : 'No Violation'}
                   </span>
                 </div>
               </div>
