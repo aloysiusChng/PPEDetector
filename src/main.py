@@ -5,6 +5,7 @@ import asyncio
 import requests
 import zstd
 import base64
+import hashlib
 from ultralytics import YOLO
 from gpiozero import DistanceSensor
 from telegram import Bot
@@ -171,7 +172,8 @@ try:
         if "person" in missing:
             print("No person detected. Skipping Telegram alert.")
         elif missing:
-            telegram_message(f"PPE Missing at {device_name}: {', '.join(missing)}. Image Evidence: https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com/{image_data}")
+            image_hash = hashlib.sha256(buffer).hexdigest()
+            telegram_message(f"PPE Missing at {device_name}: {', '.join(missing)}. Image Evidence: https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com/{image_hash}")
             upload_event(image_data, True, device_name)
         else:
             print("All PPE present.")
