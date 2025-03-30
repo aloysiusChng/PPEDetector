@@ -10,14 +10,18 @@ from ultralytics import YOLO
 from gpiozero import DistanceSensor
 from telegram import Bot
 from dotenv import load_dotenv
+from config import Config
 
-# --- Load environment and Telegram Bot ---
+# --- Load environment and Variable Setup ---
+web_config = Config()
 load_dotenv()
 bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
 chat_id = os.getenv("TELEGRAM_CHAT_ID")
 device_name = os.getenv("DEVICE_NAME") or "Unnamed Device"
 external_server_url = os.getenv("SERVER_URL") or "http://127.0.0.1:5000"
 external_server_api_key = os.getenv("SERVER_API_KEY") or "5a2a68a8-8f1f-443d-a69e-578e5583b922"
+S3_REGION = web_config.S3_REGION
+S3_BUCKET = web_config.S3_BUCKET
 
 # Set up asyncio event loop
 loop = asyncio.new_event_loop()
@@ -37,8 +41,6 @@ US.max_distance = 2
 
 # --- Constants ---
 SHOW_BOUNDING_BOXES = True  # Toggle this to False to hide bounding boxes
-S3_REGION = os.getenv("S3_REGION")
-S3_BUCKET = os.getenv("S3_BUCKET")
 
 # Push notification to Telegram
 def telegram_message(message):
