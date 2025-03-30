@@ -18,13 +18,13 @@ device_name = os.getenv("DEVICE_NAME") or "Unnamed Device"
 external_server_url = os.getenv("SERVER_URL") or "http://127.0.0.1:5000"
 external_server_api_key = os.getenv("SERVER_API_KEY") or "5a2a68a8-8f1f-443d-a69e-578e5583b922"
 
-# Set up asyncio event loop (Fix #4)
+# Set up asyncio event loop
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 
 # --- YOLO model and constants ---
 model = YOLO("checkpoints/yolo10s_trained1.pt")
-required_items = ["person", "helmet", "gloves"]
+required_items = ["person", "helmet"] # Edit this list to add/remove required items
 
 # --- Camera ---
 cap = cv2.VideoCapture(0)
@@ -35,12 +35,14 @@ US.threshold_distance = 0.75
 US.max_distance = 2
 
 # --- Constants ---
-SHOW_BOUNDING_BOXES = False  # Toggle this to False to hide bounding boxes
+SHOW_BOUNDING_BOXES = True  # Toggle this to False to hide bounding boxes
 
+# Push notification to Telegram
 def telegram_message(message):
     print("Sending Alert to Telegram: ", message)
     loop.run_until_complete(bot.send_message(chat_id=chat_id, text=message))
 
+# Upload event to external server
 def upload_event(image_data, flagged, device_name):
     try:
         upload_req = requests.post(
@@ -63,6 +65,7 @@ def upload_event(image_data, flagged, device_name):
         print(f"Error uploading event: {e}")
         return False
 
+# Overlay function to show guide and countdown
 def show_guide(frame, elapsed):
     h, w, _ = frame.shape
     box_width, box_height = 200, 400
@@ -111,7 +114,7 @@ def run_inference(frame, top_left, bottom_right):
             cv2.putText(annotated_crop, class_name, (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
 
-    # Checklist overlay (color only)
+    # Checklist overlay
     checklist_x, checklist_y = 10, 30
     for item in required_items:
         color = (0, 255, 0) if item in detected_classes else (0, 0, 255)
@@ -160,7 +163,7 @@ try:
         annotated, missing = run_inference(final_frame, top_left, bottom_right)
         show_result_window(annotated, timeout=5)  # Show detection result (Fix #3)
 
-        _, buffer = cv2.imencode('.png', final_frame)
+        _, buffer = cv2.imencode('.png', annotated)
         image_data = base64.b64encode(zstd.compress(buffer)).decode("utf-8")
 
         if "person" in missing:
@@ -172,7 +175,7 @@ try:
             print("All PPE present.")
             upload_event(image_data, False, device_name)
 
-        time.sleep(5)  # Cooldown (Final Suggestion #3)
+        time.sleep(5)  # Cooldown
         cv2.destroyAllWindows()
 
 finally:

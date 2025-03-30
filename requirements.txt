@@ -7,5 +7,4 @@ flask
 flask-sqlalchemy
 boto3
 zstd
-base64
 psycopg2-binary
