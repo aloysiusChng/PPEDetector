@@ -40,7 +40,7 @@ This project consists of two main parts:
 - Create a .env file in the backend directory with the following content:
 
 ```bash
-   DB_CONNECTION_STRING=postgresql://postgres:edgeInf2009@ppedetector-rds-db.ci9owh7ddycl.us-east-1.rds.amazonaws.com/ppevision
+   DB_CONNECTION_STRING="u need to be in our super exclusive secret telegram group to find out"
    S3_BUCKET_URL=https://ppe-vision-image.s3.ap-southeast-1.amazonaws.com
 ```
 
