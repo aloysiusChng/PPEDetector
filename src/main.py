@@ -40,7 +40,7 @@ US.threshold_distance = 0.75
 US.max_distance = 2
 
 # --- Constants ---
-SHOW_BOUNDING_BOXES = True  # Toggle this to False to hide bounding boxes
+SHOW_BOUNDING_BOXES = False  # Toggle this between True/False to show/hide bounding boxes
 
 # Push notification to Telegram
 def telegram_message(message):

@@ -14,7 +14,7 @@ An Edge Deployed solution to ensuring personnel entering worksites are properly 
 # Required Devices
 1 x Raspberry Pi 400 (And its dependecies, i.e. Power Adapter and Mouse for easy navigation)
 
-1 x Web Camera 
+1 x Web Camera (Higher Resolution will lead to higher accuracy in detection)
 
 1 x Monitor (Optional if viewing through secondary device connected via a Virtual Network Computing software like VNCViewer)
 
@@ -67,13 +67,13 @@ When in the Flask shell:
 ```
 
 # Running the Application
-Position ultrasonic sensor and web camera so that it covers the entry point of the worksites.
+1. Position ultrasonic sensor and web camera so that it covers the entry point of the worksites.
 
-Open 2 terminals, in the first terminal:
+2. Open 2 terminals, in the first terminal:
 ```bash
 flask run
 ```
-In the second terminal:
+3. In the second terminal:
 ```bash
 python src/main.py
 ```
