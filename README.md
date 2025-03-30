@@ -2,7 +2,14 @@
 ## Introduction
 An Edge Deployed solution to ensuring personnel entering worksites are properly equipped with Personal Protective Equipment (PPE). An edge-deployed YOLO_v10s fine-tuned to detect Humans and PPE on a Raspberry Pi 400 attached with a web camera and a ultrasonic sensor to detect incoming humans and check for PPE. Logging each detection onto a cloud database (PostgreSQL on AWS RDS). If a violation is detected, a message will be sent out to a Telegram group to notify higher management of the violation and image evidence will be stored onto cloud database (S3 Bucket on AWS). 
 
-## Team Members
+## Group P1-3 Members
+| Full Name | Student ID |
+| ----------- | ----------- |
+| NG WEI HERNG  | 2302854 |
+| CHNG SONG HENG ALOYSIUS | 2302857 |
+| HENG YU XIN | 2302786 |
+| WONG KHIN FOONG | 2302728 |
+| WONG JUN KAI | 2302765 |
 
 # Required Devices
 1 x Raspberry Pi 400 (And its dependecies, i.e. Power Adapter and Mouse for easy navigation)
@@ -87,7 +94,7 @@ SHOW_BOUNDING_BOXES = True
 ```
 
 # Dashboard Web Application
-Refer to the README file inside the `safety-moitoring-dashboard` folder for further instructions.
+Refer to the `README.md` file inside the `safety-moitoring-dashboard` folder for further instructions.
 
 # Contribution
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
