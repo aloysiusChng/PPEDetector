@@ -6,29 +6,42 @@ import { AlertTriangle, CheckCircle, Calendar, Users, ArrowRight } from 'lucide-
 
 const Dashboard = ({ incidents, stats, loading }) => {
   const [timeRange, setTimeRange] = useState('week');
-  
+
   if (loading) {
     return <div className="loading-container">Loading dashboard data...</div>;
   }
-  
+
   // Filter for violations (flag=1)
   const violations = incidents.filter(incident => incident.flag === true);
-  
+
   // Calculate violation rate
-  const violationRate = incidents.length > 0 
-    ? Math.round((violations.length / incidents.length) * 100) 
+  const violationRate = incidents.length > 0
+    ? Math.round((violations.length / incidents.length) * 100)
     : 0;
-  
-  // Get today's violations
-  const today = new Date().toISOString().split('T')[0];
+
+  // Get today's violations with Singapore timezone adjustment
+  const getSingaporeDate = () => {
+    const now = new Date();
+    // Add 8 hours for Singapore time zone (UTC+8)
+    const sgTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+    return sgTime.toISOString().split('T')[0];
+  };
+
+  const todaySGT = getSingaporeDate();
   const todayViolations = violations.filter(
-    incident => incident.timestamp.startsWith(today)
+    incident => {
+      // Convert incident timestamp to Singapore time
+      const incidentTime = new Date(incident.timestamp);
+      const incidentSGTime = new Date(incidentTime.getTime() + (8 * 60 * 60 * 1000));
+      const incidentDateSGT = incidentSGTime.toISOString().split('T')[0];
+      return incidentDateSGT === todaySGT;
+    }
   ).length;
-  
+
   return (
     <div className="dashboard">
       <h1>Safety Monitoring Dashboard</h1>
-      
+
       {/* Summary Cards */}
       <div className="summary-cards">
         <div className="card">
@@ -40,7 +53,7 @@ const Dashboard = ({ incidents, stats, loading }) => {
             <div className="card-value">{incidents.length}</div>
           </div>
         </div>
-        
+
         <div className="card">
           <div className="card-icon alert">
             <AlertTriangle size={24} />
@@ -50,7 +63,7 @@ const Dashboard = ({ incidents, stats, loading }) => {
             <div className="card-value">{violations.length}</div>
           </div>
         </div>
-        
+
         <div className="card">
           <div className="card-icon today">
             <Calendar size={24} />
@@ -60,7 +73,7 @@ const Dashboard = ({ incidents, stats, loading }) => {
             <div className="card-value">{todayViolations}</div>
           </div>
         </div>
-        
+
         <div className="card">
           <div className="card-icon score">
             <CheckCircle size={24} />
@@ -71,7 +84,7 @@ const Dashboard = ({ incidents, stats, loading }) => {
           </div>
         </div>
       </div>
-      
+
       {/* Charts Section */}
       <div className="charts-container">
         {/* Incident Trend Chart */}
@@ -79,14 +92,14 @@ const Dashboard = ({ incidents, stats, loading }) => {
           <div className="chart-header">
             <h3>Violation Trend</h3>
             <div className="chart-controls">
-              <button 
-                className={timeRange === 'week' ? 'active' : ''} 
+              <button
+                className={timeRange === 'week' ? 'active' : ''}
                 onClick={() => setTimeRange('week')}
               >
                 Week
               </button>
-              <button 
-                className={timeRange === 'month' ? 'active' : ''} 
+              <button
+                className={timeRange === 'month' ? 'active' : ''}
                 onClick={() => setTimeRange('month')}
               >
                 Month
@@ -94,40 +107,45 @@ const Dashboard = ({ incidents, stats, loading }) => {
             </div>
           </div>
           <div className="chart">
+
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={stats.trendData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(date) => {
-                    const d = new Date(date);
-                    return `${d.getMonth() + 1}/${d.getDate()}`;
-                  }} 
-                />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value) => [`${value} violations`, 'Count']}
-                  labelFormatter={(label) => {
-                    const d = new Date(label);
-                    return d.toLocaleDateString();
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(dateStr) => {
+                    // Do not add timezone offset again
+                    const dateObj = new Date(dateStr);
+                    return `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
                   }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="count" 
-                  stroke="#F56565" 
+                <YAxis />
+                <Tooltip
+                  formatter={(value) => [`${value} violations`, 'Count']}
+                  labelFormatter={(dateStr) => {
+                    // Do not add timezone offset again
+                    const dateObj = new Date(dateStr);
+                    return dateObj.toLocaleDateString();
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="#F56565"
                   strokeWidth={2}
-                  activeDot={{ r: 6 }} 
+                  activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>
+
           </div>
         </div>
-        
+
         {/* Hourly Distribution Chart */}
         <div className="chart-card">
           <div className="chart-header">
-            <h3>Activity by Hour of Day</h3>
+            <h3>Activity by Hour of Day (All Time)</h3>
+            <p className="chart-subtitle">Distribution of all detections by hour</p>
           </div>
           <div className="chart">
             <ResponsiveContainer width="100%" height={250}>
@@ -143,7 +161,7 @@ const Dashboard = ({ incidents, stats, loading }) => {
           </div>
         </div>
       </div>
-      
+
       {/* Recent Violations */}
       <div className="recent-incidents">
         <div className="section-header">
@@ -152,7 +170,7 @@ const Dashboard = ({ incidents, stats, loading }) => {
             View All <ArrowRight size={16} />
           </Link>
         </div>
-        
+
         <div className="incidents-table">
           <table>
             <thead>
