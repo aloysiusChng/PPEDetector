@@ -36,18 +36,18 @@ app.get('/api/incidents', async (req, res) => {
   //const checkResult = await pool.query('SELECT id, flagged FROM public.event_log');
   //checkResult.rows.forEach(row => {
   //console.log(`ID: ${row.id}, Flagged: ${row.flagged}, Type: ${typeof row.flagged}`);
-//});
+  //});
   try {
     const result = await pool.query(
       'SELECT id, created_at, image_hash, flagged, device_name FROM public.event_log ORDER BY created_at DESC'
     );
-    
+
     // Transform data to match your frontend expectations with Singapore time conversion
     const incidents = result.rows.map(row => {
       // Convert UTC time to Singapore time (UTC+8)
       const utcTime = new Date(row.created_at);
       const singaporeTime = new Date(utcTime.getTime() + (8 * 60 * 60 * 1000)); // Add 8 hours
-      
+
       return {
         id: row.id.toString(),
         timestamp: singaporeTime.toISOString(), // Singapore time
@@ -55,7 +55,7 @@ app.get('/api/incidents', async (req, res) => {
         image_url: buildImageUrl(row.image_hash)
       };
     });
-    
+
     res.json(incidents);
   } catch (error) {
     console.error('Database query error:', error);
@@ -71,17 +71,17 @@ app.get('/api/incidents/:id', async (req, res) => {
       'SELECT id, created_at, image_hash, flagged, device_name FROM public.event_log WHERE id = $1',
       [id]
     );
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Incident not found' });
     }
-    
+
     const row = result.rows[0];
-    
+
     // Convert UTC time to Singapore time
     const utcTime = new Date(row.created_at);
     const singaporeTime = new Date(utcTime.getTime() + (8 * 60 * 60 * 1000)); // Add 8 hours
-    
+
     const incident = {
       id: row.id.toString(),
       timestamp: singaporeTime.toISOString(),
@@ -89,7 +89,7 @@ app.get('/api/incidents/:id', async (req, res) => {
       image_url: buildImageUrl(row.image_hash),
       device_name: row.device_name
     };
-    
+
     res.json(incident);
   } catch (error) {
     console.error('Database query error:', error);
@@ -103,36 +103,36 @@ app.get('/api/stats/summary', async (req, res) => {
     // Get basic counts
     const totalResult = await pool.query('SELECT COUNT(*) FROM public.event_log');
     const violationsResult = await pool.query('SELECT COUNT(*) FROM public.event_log WHERE flagged = true');
-    
+
     // Debug: Log the actual values
     console.log('Total count:', totalResult.rows[0].count);
     console.log('Violations count:', violationsResult.rows[0].count);
-    
+
     const totalIncidents = parseInt(totalResult.rows[0].count);
     const totalViolations = parseInt(violationsResult.rows[0].count);
-    
+
     // Get today's violations - using Singapore date instead of UTC
     const singaporeDate = new Date(Date.now() + (8 * 60 * 60 * 1000)).toISOString().split('T')[0];
     const todayResult = await pool.query(
       "SELECT COUNT(*) FROM public.event_log WHERE flagged = true AND DATE(created_at + INTERVAL '8 hours') = $1",
       [singaporeDate]
     );
-    
+
     // Debug
     console.log('Singapore date:', singaporeDate);
     console.log('Today\'s violations:', todayResult.rows[0].count);
-    
+
     const todayViolations = parseInt(todayResult.rows[0].count);
-    
+
     // Calculate compliance rate
     const complianceRate = Math.round(((totalIncidents - totalViolations) / totalIncidents) * 100) || 0;
-    
+
     // Get hourly distribution data
     const hourlyData = await getHourlyDistribution();
-    
+
     // Get trend data for the last 7 days
     const trendData = await getTrendData(7);
-    
+
     res.json({
       totalIncidents,
       totalViolations,
@@ -160,7 +160,7 @@ async function getHourlyDistribution() {
       GROUP BY EXTRACT(HOUR FROM (created_at + INTERVAL '8 hours'))
       ORDER BY hour
     `);
-    
+
     // Fill in any missing hours
     const hourlyData = Array(24).fill().map((_, i) => ({
       hour: `${i}:00`,
@@ -168,12 +168,12 @@ async function getHourlyDistribution() {
       violations: 0,
       rate: 0
     }));
-    
+
     result.rows.forEach(row => {
       const hour = parseInt(row.hour);
       const total = parseInt(row.total);
       const violations = parseInt(row.violations);
-      
+
       hourlyData[hour] = {
         hour: `${hour}:00`,
         detections: total,
@@ -181,7 +181,7 @@ async function getHourlyDistribution() {
         rate: total > 0 ? Math.round((violations / total) * 100) : 0
       };
     });
-    
+
     return hourlyData;
   } catch (error) {
     console.error('Error generating hourly data:', error);
@@ -189,50 +189,44 @@ async function getHourlyDistribution() {
   }
 }
 
-// Helper function to get trend data for the last N days
 async function getTrendData(days) {
   try {
-    // Debug logging
-    console.log('Generating trend data for last', days, 'days');
-    
-    // Use Singapore time for date calculations
+    // Use explicit Singapore date for filtering and return formatted date string
     const result = await pool.query(`
       SELECT 
-        DATE(created_at + INTERVAL '8 hours') as date,
+        TO_CHAR(DATE(created_at + INTERVAL '8 hours'), 'YYYY-MM-DD') as date_str,
         COUNT(*) as total,
         SUM(CASE WHEN flagged = true THEN 1 ELSE 0 END) as violations
       FROM public.event_log
-      WHERE created_at >= CURRENT_DATE - INTERVAL '${days} days'
-      GROUP BY DATE(created_at + INTERVAL '8 hours')
-      ORDER BY date
+      WHERE DATE(created_at + INTERVAL '8 hours') >= DATE(NOW() + INTERVAL '8 hours') - INTERVAL '${days} days'
+      GROUP BY date_str
+      ORDER BY date_str
     `);
-    
-    console.log('Trend query results:', result.rows);
-    
-    // Generate all dates for the last N days
-    const today = new Date();
+
+    // Generate all dates for the last N days in Singapore time
+    const today = new Date(Date.now() + (8 * 60 * 60 * 1000)); // Adjust to Singapore time
     const dates = [];
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       dates.push(date.toISOString().split('T')[0]);
     }
-    
+
     // Create the trend data with zeros for missing dates
     const trendData = dates.map(date => ({
       date,
       count: 0
     }));
-    
-    // Fill in actual data
+
+    // Fill in actual data using the string date format
     result.rows.forEach(row => {
-      const date = new Date(row.date).toISOString().split('T')[0];
-      const index = trendData.findIndex(item => item.date === date);
+      const dateStr = row.date_str;  // Already in YYYY-MM-DD format
+      const index = trendData.findIndex(item => item.date === dateStr);
       if (index !== -1) {
         trendData[index].count = parseInt(row.violations);
       }
     });
-    
+
     return trendData;
   } catch (error) {
     console.error('Error generating trend data:', error);
@@ -252,14 +246,14 @@ app.get('/api/devices', async (req, res) => {
       GROUP BY device_name
       ORDER BY device_name
     `);
-    
+
     const devices = result.rows.map(row => ({
       name: row.device_name,
       total: parseInt(row.total),
       violations: parseInt(row.violations),
       compliance: Math.round(((parseInt(row.total) - parseInt(row.violations)) / parseInt(row.total)) * 100) || 0
     }));
-    
+
     res.json(devices);
   } catch (error) {
     console.error('Database query error:', error);
